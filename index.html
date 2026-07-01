@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ทรัพย์สินของฉัน">
+<meta name="theme-color" content="#0e7a4f">
+<title>ทรัพย์สินของฉัน</title>
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%230e7a4f'/%3E%3Ctext x='90' y='120' font-size='90' text-anchor='middle'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#f4f7f3; --card:#ffffff; --card2:#eef4ec; --line:#e2e8df;
+    --text:#0f2a1d; --muted:#6b8276; --accent:#0e7a4f;
+    --accent-dark:#0a5e3c; --green:#10985f; --red:#d6455b; --gold:#c79a3a;
+    --shadow:0 6px 22px rgba(16,80,52,.08);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--bg); color:var(--text);
+    padding:env(safe-area-inset-top) 0 0 0; min-height:100vh;
+  }
+  .wrap{max-width:560px; margin:0 auto; padding:16px 16px 120px;}
+  header{display:flex; align-items:flex-start; justify-content:space-between;}
+  header h1{font-size:22px; margin:8px 0 2px;}
+  header p{color:var(--muted); margin:0 0 16px; font-size:13px;}
+  .refresh{background:var(--card); border:1px solid var(--line); color:var(--accent); border-radius:12px; padding:9px 12px; font-size:13px; margin-top:8px; white-space:nowrap; box-shadow:var(--shadow); font-weight:600;}
+  .refresh:disabled{opacity:.5;}
+
+  .summary{
+    background:linear-gradient(140deg,#0e7a4f 0%,#0a5e3c 55%,#08482f 100%);
+    border-radius:22px; padding:22px; margin-bottom:6px; color:#fff;
+    box-shadow:0 12px 30px rgba(10,94,60,.28); position:relative; overflow:hidden;
+  }
+  .summary{border-top:3px solid #e7c15a;}
+  .summary::after{content:""; position:absolute; top:-40px; right:-30px; width:160px; height:160px; border-radius:50%; background:radial-gradient(circle,rgba(231,193,90,.5),transparent 70%);}
+  .summary .label{color:rgba(255,255,255,.72); font-size:13px; letter-spacing:.3px;}
+  .summary .total{font-size:36px; font-weight:800; margin:4px 0; letter-spacing:.5px;
+    background:linear-gradient(90deg,#fff7dd,#f6d878,#e7b73f,#fff2c9);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    text-shadow:0 2px 10px rgba(231,183,63,.25);}
+  .summary .row{display:flex; gap:16px; margin-top:14px; flex-wrap:wrap; padding-top:14px; border-top:1px solid rgba(255,255,255,.15);}
+  .summary .row div{font-size:13px; color:rgba(255,255,255,.72);}
+  .summary .row b{display:block; font-size:16px; margin-top:3px; color:#fff;}
+  .summary .up{color:#7ef0b4;} .summary .down{color:#ffb3bd;} .summary .flat{color:rgba(255,255,255,.8);}
+  .priceinfo{font-size:11px; color:var(--muted); margin:2px 2px 0; min-height:14px;}
+
+  .filters{display:flex; gap:8px; overflow-x:auto; padding:14px 0; -webkit-overflow-scrolling:touch;}
+  .filters button{
+    flex:0 0 auto; background:var(--card); color:var(--muted); border:1px solid var(--line);
+    border-radius:999px; padding:8px 14px; font-size:13px; white-space:nowrap;
+  }
+  .filters button.active{background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600;}
+
+  .asset{
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:14px 16px; margin-bottom:11px; display:flex; align-items:center; gap:12px;
+    box-shadow:var(--shadow);
+  }
+  .asset .ico{font-size:24px; width:42px; height:42px; flex:0 0 auto; display:flex; align-items:center; justify-content:center; background:var(--card2); border-radius:12px; position:relative;}
+  .asset .ico .live{position:absolute; bottom:-3px; right:-3px; font-size:11px;}
+  .asset .mid{flex:1; min-width:0;}
+  .asset .name{font-weight:600; font-size:15px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .asset .sub{color:var(--muted); font-size:12px; margin-top:2px;}
+  .asset .right{text-align:right; flex:0 0 auto;}
+  .asset .val{font-weight:600; font-size:15px;}
+  .asset .pct{font-size:12px; margin-top:2px;}
+  .up{color:var(--green);} .down{color:var(--red);} .flat{color:var(--muted);}
+
+  .empty{text-align:center; color:var(--muted); padding:50px 20px; font-size:14px;}
+  .empty .big{font-size:40px; margin-bottom:8px;}
+
+  .fab{
+    position:fixed; right:20px; bottom:calc(24px + env(safe-area-inset-bottom));
+    width:60px; height:60px; border-radius:30px; background:linear-gradient(140deg,#f6d878,#e7b73f,#c79a3a); color:#5a3d0a;
+    border:none; font-size:32px; font-weight:700; box-shadow:0 10px 26px rgba(199,154,58,.5); z-index:20;
+  }
+
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; z-index:30; align-items:flex-end;}
+  .overlay.show{display:flex;}
+  .sheet{
+    background:var(--bg); width:100%; max-width:560px; margin:0 auto; border-radius:24px 24px 0 0;
+    padding:20px 18px calc(28px + env(safe-area-inset-bottom)); max-height:92vh; overflow-y:auto;
+    border-top:1px solid var(--line);
+  }
+  .sheet h2{margin:4px 0 16px; font-size:19px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px;}
+  .field input, .field select{
+    width:100%; background:var(--card); border:1px solid var(--line); color:var(--text);
+    border-radius:12px; padding:13px 14px; font-size:16px;
+  }
+  .field input:focus, .field select:focus{outline:none; border-color:var(--accent);}
+  .cat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px;}
+  .cat-grid button{
+    background:var(--card); border:1px solid var(--line); color:var(--text);
+    border-radius:12px; padding:10px 4px; font-size:11px; display:flex; flex-direction:column; gap:4px; align-items:center;
+  }
+  .cat-grid button .e{font-size:22px;}
+  .cat-grid button.active{border-color:var(--accent); background:var(--card2);}
+  .seg{display:flex; gap:6px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:4px;}
+  .seg button{flex:1; background:transparent; border:none; color:var(--muted); border-radius:9px; padding:9px 4px; font-size:12px;}
+  .seg button.active{background:var(--accent); color:#fff; font-weight:600;}
+  .two{display:flex; gap:10px;} .two .field{flex:1;}
+  .preview{background:var(--card); border-radius:12px; padding:12px 14px; font-size:13px; color:var(--muted); margin-bottom:14px; min-height:20px;}
+  .btns{display:flex; gap:10px; margin-top:6px;}
+  .btn{flex:1; border:none; border-radius:14px; padding:15px; font-size:16px; font-weight:600;}
+  .btn-primary{background:var(--accent); color:#fff;}
+  .btn-ghost{background:var(--card); color:var(--text); border:1px solid var(--line);}
+  .btn-danger{background:transparent; color:var(--red); border:1px solid var(--red); width:100%; margin-top:14px; border-radius:14px; padding:14px; font-size:15px;}
+  .tools{display:flex; gap:8px; margin-top:18px;}
+  .tools button{flex:1; background:var(--card); border:1px solid var(--line); color:var(--muted); border-radius:12px; padding:11px; font-size:13px;}
+  .hide{display:none;}
+
+  /* Lock screen */
+  #lock{position:fixed; inset:0; z-index:100; background:linear-gradient(160deg,#0e7a4f,#08482f);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff;
+    padding:env(safe-area-inset-top) 20px 0;}
+  #lock .lk-ico{font-size:48px; margin-bottom:6px;}
+  #lock h2{margin:0 0 4px; font-size:20px;}
+  #lock .lk-sub{color:rgba(255,255,255,.7); font-size:13px; margin-bottom:26px; min-height:18px;}
+  #lock .dots{display:flex; gap:14px; margin-bottom:34px;}
+  #lock .dot{width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,.6);}
+  #lock .dot.on{background:#fff; border-color:#fff;}
+  #lock.err .dots{animation:shake .4s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+  #lock .pad{display:grid; grid-template-columns:repeat(3,72px); gap:16px;}
+  #lock .pad button{width:72px; height:72px; border-radius:50%; border:1px solid rgba(255,255,255,.3);
+    background:rgba(255,255,255,.1); color:#fff; font-size:26px; font-weight:500;}
+  #lock .pad button:active{background:rgba(255,255,255,.3);}
+  #lock .pad .blank{background:transparent; border:none;}
+</style>
+</head>
+<body>
+<div id="lock">
+  <div class="lk-ico">🔒</div>
+  <h2 id="lkTitle">ใส่รหัสผ่าน</h2>
+  <div class="lk-sub" id="lkSub">เพื่อเปิดดูทรัพย์สินของคุณ</div>
+  <div class="dots" id="lkDots"></div>
+  <div class="pad">
+    <button onclick="lkPress('1')">1</button><button onclick="lkPress('2')">2</button><button onclick="lkPress('3')">3</button>
+    <button onclick="lkPress('4')">4</button><button onclick="lkPress('5')">5</button><button onclick="lkPress('6')">6</button>
+    <button onclick="lkPress('7')">7</button><button onclick="lkPress('8')">8</button><button onclick="lkPress('9')">9</button>
+    <button class="blank"></button><button onclick="lkPress('0')">0</button><button onclick="lkDel()">⌫</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>💰 ทรัพย์สินของฉัน</h1>
+      <p>เก็บเงิน เก็บทอง รวยๆ 🤑📈</p>
+    </div>
+    <button class="refresh" id="refreshBtn" onclick="refreshPrices()">🔄 อัปเดต</button>
+  </header>
+
+  <div class="summary">
+    <div class="label">มูลค่ารวมปัจจุบัน</div>
+    <div class="total" id="totalNow">฿0</div>
+    <div class="row">
+      <div>ต้นทุนรวม<b id="totalCost">฿0</b></div>
+      <div>กำไร/ขาดทุน<b id="totalPL">฿0</b></div>
+      <div>ผลตอบแทน<b id="totalPct">0%</b></div>
+    </div>
+  </div>
+  <div class="priceinfo" id="priceInfo"></div>
+
+  <div class="filters" id="filters"></div>
+  <div id="list"></div>
+
+  <div class="tools">
+    <button onclick="exportData()">⬆️ สำรองข้อมูล</button>
+    <button onclick="document.getElementById('importFile').click()">⬇️ นำเข้าข้อมูล</button>
+  </div>
+  <div class="tools">
+    <button onclick="changePin()">🔑 เปลี่ยนรหัส</button>
+    <button onclick="lockNow()">🔒 ล็อกแอป</button>
+  </div>
+  <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+</div>
+
+<button class="fab" onclick="openSheet()">+</button>
+
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <h2 id="sheetTitle">เพิ่มทรัพย์สิน</h2>
+    <input type="hidden" id="editId">
+    <div class="field">
+      <label>ประเภท</label>
+      <div class="cat-grid" id="catGrid"></div>
+    </div>
+    <div class="field">
+      <label>ชื่อรายการ</label>
+      <input type="text" id="fName" placeholder="เช่น หุ้น PTT, คอนโดสุขุมวิท, ทองคำแท่ง">
+    </div>
+
+    <div class="field">
+      <label>แหล่งราคาปัจจุบัน</label>
+      <div class="seg" id="srcSeg">
+        <button data-src="manual" onclick="pickSrc('manual')">✍️ กรอกเอง</button>
+        <button data-src="crypto" onclick="pickSrc('crypto')">🪙 คริปโต</button>
+        <button data-src="gold" onclick="pickSrc('gold')">🥇 ทองไทย</button>
+        <button data-src="stockus" onclick="pickSrc('stockus')">📈 หุ้น US</button>
+      </div>
+    </div>
+
+    <!-- crypto fields -->
+    <div id="cryptoBox" class="hide">
+      <div class="two">
+        <div class="field">
+          <label>เหรียญ</label>
+          <select id="fCoin" onchange="updatePreview()"></select>
+        </div>
+        <div class="field">
+          <label>จำนวนเหรียญ</label>
+          <input type="number" id="fQty" inputmode="decimal" placeholder="0" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <!-- US stock fields -->
+    <div id="stockBox" class="hide">
+      <div class="two">
+        <div class="field">
+          <label>สัญลักษณ์ (ticker)</label>
+          <input type="text" id="fTicker" placeholder="เช่น SPCX, TSLA" oninput="this.value=this.value.toUpperCase()" onchange="updatePreview()">
+        </div>
+        <div class="field">
+          <label>จำนวนหุ้น</label>
+          <input type="number" id="fShares" inputmode="decimal" placeholder="0" oninput="updatePreview()">
+        </div>
+      </div>
+    </div>
+
+    <!-- gold fields -->
+    <div id="goldBox" class="hide">
+      <div class="field">
+        <label>จำนวน (บาททอง — ทองคำแท่ง 96.5%)</label>
+        <input type="number" id="fGold" inputmode="decimal" placeholder="เช่น 2" oninput="updatePreview()">
+      </div>
+    </div>
+
+
+    <div class="two">
+      <div class="field">
+        <label>ต้นทุน (เงินที่ลงไป)</label>
+        <input type="number" id="fCost" inputmode="decimal" placeholder="0" oninput="updatePreview()">
+      </div>
+      <div class="field" id="nowField">
+        <label>มูลค่าปัจจุบัน</label>
+        <input type="number" id="fNow" inputmode="decimal" placeholder="0" oninput="updatePreview()">
+      </div>
+    </div>
+    <div class="field">
+      <label>หมายเหตุ (ไม่บังคับ)</label>
+      <input type="text" id="fNote" placeholder="เช่น วันที่ซื้อ, ที่เก็บ">
+    </div>
+    <div class="preview" id="preview">กรอกข้อมูลเพื่อดูผลตอบแทน</div>
+    <div class="btns">
+      <button class="btn btn-ghost" onclick="closeSheet()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveAsset()">บันทึก</button>
+    </div>
+    <button class="btn-danger" id="deleteBtn" style="display:none" onclick="deleteAsset()">🗑️ ลบรายการนี้</button>
+  </div>
+</div>
+
+<script>
+const CATS = [
+  {id:'cash',  name:'เงินสด/ฝาก', icon:'🏦'},
+  {id:'stock', name:'หุ้น/กองทุน', icon:'📈'},
+  {id:'crypto',name:'คริปโต',      icon:'🪙'},
+  {id:'prop',  name:'อสังหา/ที่ดิน',icon:'🏠'},
+  {id:'gold',  name:'ทอง',         icon:'🥇'},
+  {id:'collect',name:'ของสะสม',    icon:'🎨'},
+  {id:'biz',   name:'ธุรกิจ',      icon:'💼'},
+  {id:'other', name:'อื่นๆ',       icon:'📦'},
+];
+const COINS = [
+  {id:'kub',name:'Bitkub Coin (KUB) · เรียลไทม์',src:'bitkub'},
+  {id:'bitcoin',name:'Bitcoin (BTC)'},
+  {id:'ethereum',name:'Ethereum (ETH)'},
+  {id:'tether',name:'Tether (USDT)'},
+  {id:'binancecoin',name:'BNB'},
+  {id:'solana',name:'Solana (SOL)'},
+  {id:'ripple',name:'XRP'},
+  {id:'cardano',name:'Cardano (ADA)'},
+  {id:'dogecoin',name:'Dogecoin (DOGE)'},
+];
+const KEY='myAssets_v2';
+const PRICEKEY='myAssets_prices';
+const PINKEY='myAssets_pin';
+// hash ของรหัสตั้งต้น (ของจริงไม่ถูกเก็บในโค้ด — นี่คือค่าที่เข้ารหัสแล้ว)
+const DEFAULT_PIN_HASH='3a583122c85eaf22c6ab9a10476734dc1a7e9d55d9a231bbe59405d10ec9e615';
+let lkBuf='';
+async function sha256(s){
+  const b=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+}
+function currentPinHash(){ return localStorage.getItem(PINKEY) || DEFAULT_PIN_HASH; }
+function renderDots(){
+  document.getElementById('lkDots').innerHTML =
+    Array.from({length:Math.max(lkBuf.length,1)},(_, i)=>`<div class="dot ${i<lkBuf.length?'on':''}"></div>`).join('');
+}
+async function lkPress(d){
+  if(lkBuf.length>=12) return;
+  lkBuf+=d; renderDots();
+  if(lkBuf.length>=4){
+    const h=await sha256(lkBuf);
+    if(h===currentPinHash()){ unlock(); return; }
+  }
+  if(lkBuf.length>=12){
+    const lk=document.getElementById('lock');
+    lk.classList.add('err');
+    document.getElementById('lkSub').textContent='รหัสไม่ถูกต้อง ลองใหม่อีกครั้ง';
+    setTimeout(()=>{ lkBuf=''; renderDots(); lk.classList.remove('err'); }, 450);
+  }
+}
+function lkDel(){ lkBuf=lkBuf.slice(0,-1); renderDots(); }
+function unlock(){ lkBuf=''; document.getElementById('lock').style.display='none'; }
+function lockNow(){ lkBuf=''; renderDots(); document.getElementById('lock').classList.remove('err');
+  document.getElementById('lkSub').textContent='เพื่อเปิดดูทรัพย์สินของคุณ';
+  document.getElementById('lock').style.display='flex'; }
+async function changePin(){
+  const cur=prompt('ใส่รหัสเดิมเพื่อยืนยัน');
+  if(cur===null) return;
+  if(await sha256(cur)!==currentPinHash()){ alert('รหัสเดิมไม่ถูกต้อง'); return; }
+  const n1=prompt('ตั้งรหัสใหม่ (ตัวเลข 4-12 หลัก)');
+  if(!n1||!/^\d{4,12}$/.test(n1)){ alert('รหัสต้องเป็นตัวเลข 4-12 หลัก'); return; }
+  const n2=prompt('ใส่รหัสใหม่อีกครั้ง');
+  if(n1!==n2){ alert('รหัสไม่ตรงกัน'); return; }
+  localStorage.setItem(PINKEY, await sha256(n1));
+  alert('เปลี่ยนรหัสเรียบร้อย ✅');
+}
+let assets = load();
+let prices = loadPrices(); // {coins:{id:thb}, gold:thbPerBaht, ts:isoString}
+let activeCat = 'stock';
+let activeSrc = 'manual';
+let filter = 'all';
+
+function load(){ try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return []} }
+function save(){ localStorage.setItem(KEY, JSON.stringify(assets)); }
+function loadPrices(){ let p; try{p=JSON.parse(localStorage.getItem(PRICEKEY))}catch(e){}
+  p=p||{}; p.coins=p.coins||{}; p.stocks=p.stocks||{}; p.gold=p.gold||0; p.usdthb=p.usdthb||0; return p; }
+function savePrices(){ localStorage.setItem(PRICEKEY, JSON.stringify(prices)); }
+function catOf(id){ return CATS.find(c=>c.id===id)||CATS[7]; }
+function fmt(n){ return '฿'+Math.round(n).toLocaleString('en-US'); }
+function pct(cost,now){ if(!cost) return 0; return (now-cost)/cost*100; }
+
+// คำนวณมูลค่าปัจจุบันของรายการ (auto ถ้าเชื่อมราคา)
+function valueOf(a){
+  if(a.src==='crypto' && prices.coins[a.coin]) return (+a.qty||0)*prices.coins[a.coin];
+  if(a.src==='gold' && prices.gold) return (+a.qty||0)*prices.gold;
+  if(a.src==='stockus' && prices.stocks[a.ticker] && prices.usdthb) return (+a.qty||0)*prices.stocks[a.ticker]*prices.usdthb;
+  return +a.now||0;
+}
+
+// ---- Render ----
+function render(){
+  let cost=0, now=0;
+  assets.forEach(a=>{cost+=(+a.cost||0); now+=valueOf(a);});
+  const pl = now-cost;
+  document.getElementById('totalNow').textContent = fmt(now);
+  document.getElementById('totalCost').textContent = fmt(cost);
+  const plEl = document.getElementById('totalPL');
+  plEl.textContent = (pl>=0?'+':'')+fmt(pl);
+  plEl.className = pl>0?'up':pl<0?'down':'flat';
+  const p = pct(cost,now);
+  const pctEl = document.getElementById('totalPct');
+  pctEl.textContent = (p>=0?'+':'')+p.toFixed(1)+'%';
+  pctEl.className = p>0?'up':p<0?'down':'flat';
+
+  // ราคาอ้างอิงล่าสุด
+  const pi = document.getElementById('priceInfo');
+  if(prices.ts){
+    let parts=[];
+    if(prices.gold) parts.push('ทองไทย '+fmt(prices.gold)+'/บาท'+(prices.goldEst?' (ประมาณ)':''));
+    if(prices.stocks.SPCX) parts.push('SPCX $'+prices.stocks.SPCX);
+    if(prices.coins.kub) parts.push('KUB '+fmt(prices.coins.kub));
+    if(prices.coins.bitcoin) parts.push('BTC '+fmt(prices.coins.bitcoin));
+    pi.textContent = '🔄 อัปเดต '+new Date(prices.ts).toLocaleString('th-TH',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) + (parts.length?' · '+parts.join(' · '):'');
+  } else pi.textContent='';
+
+  const used = [...new Set(assets.map(a=>a.cat))];
+  const fEl = document.getElementById('filters');
+  let fh = `<button class="${filter==='all'?'active':''}" onclick="setFilter('all')">ทั้งหมด</button>`;
+  CATS.filter(c=>used.includes(c.id)).forEach(c=>{
+    fh += `<button class="${filter===c.id?'active':''}" onclick="setFilter('${c.id}')">${c.icon} ${c.name}</button>`;
+  });
+  fEl.innerHTML = fh;
+
+  const list = document.getElementById('list');
+  let items = assets.map((a,i)=>({...a,_i:i}));
+  if(filter!=='all') items = items.filter(a=>a.cat===filter);
+  items.sort((a,b)=>valueOf(b)-valueOf(a));
+  if(items.length===0){
+    list.innerHTML = `<div class="empty"><div class="big">📭</div>ยังไม่มีรายการ<br>กดปุ่ม + เพื่อเพิ่มทรัพย์สินแรก</div>`;
+    return;
+  }
+  list.innerHTML = items.map(a=>{
+    const c = catOf(a.cat);
+    const v = valueOf(a);
+    const p = pct(+a.cost,v);
+    const cls = p>0?'up':p<0?'down':'flat';
+    const sign = p>0?'+':'';
+    let sub = a.note || c.name;
+    if(a.src==='crypto'){ const co=COINS.find(x=>x.id===a.coin); sub=(a.qty||0)+' '+(co?co.name.match(/\(([^)]+)\)/)?.[1]||co.name:'')+(a.note?' · '+a.note:''); }
+    if(a.src==='gold'){ sub=(a.qty||0)+' บาททอง'+(a.note?' · '+a.note:''); }
+    if(a.src==='stockus'){ sub=(a.qty||0)+' หุ้น '+(a.ticker||'')+(a.note?' · '+a.note:''); }
+    const live = (a.src==='crypto'||a.src==='gold'||a.src==='stockus')?'<span class="live">🔗</span>':'';
+    return `<div class="asset" onclick="openSheet(${a._i})">
+      <div class="ico">${c.icon}${live}</div>
+      <div class="mid">
+        <div class="name">${esc(a.name)}</div>
+        <div class="sub">${esc(sub)}</div>
+      </div>
+      <div class="right">
+        <div class="val">${fmt(v)}</div>
+        <div class="pct ${cls}">${sign}${p.toFixed(1)}% · ${sign}${fmt(v-(+a.cost||0))}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function esc(s){ return String(s||'').replace(/[<>&]/g,m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m])); }
+function setFilter(f){ filter=f; render(); }
+
+// ---- Sheet ----
+function buildCatGrid(){
+  document.getElementById('catGrid').innerHTML = CATS.map(c=>
+    `<button data-cat="${c.id}" onclick="pickCat('${c.id}')"><span class="e">${c.icon}</span>${c.name}</button>`
+  ).join('');
+  document.getElementById('fCoin').innerHTML = COINS.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+}
+function pickCat(id){
+  activeCat = id;
+  document.querySelectorAll('#catGrid button').forEach(b=>b.classList.toggle('active', b.dataset.cat===id));
+}
+function pickSrc(s){
+  activeSrc = s;
+  document.querySelectorAll('#srcSeg button').forEach(b=>b.classList.toggle('active', b.dataset.src===s));
+  document.getElementById('cryptoBox').classList.toggle('hide', s!=='crypto');
+  document.getElementById('goldBox').classList.toggle('hide', s!=='gold');
+  document.getElementById('stockBox').classList.toggle('hide', s!=='stockus');
+  // ถ้าเชื่อมราคา ซ่อนช่องมูลค่าปัจจุบัน (คำนวณให้)
+  document.getElementById('nowField').classList.toggle('hide', s!=='manual');
+  updatePreview();
+}
+function openSheet(i){
+  buildCatGrid();
+  if(i===undefined){
+    document.getElementById('sheetTitle').textContent='เพิ่มทรัพย์สิน';
+    document.getElementById('editId').value='';
+    document.getElementById('fName').value='';
+    document.getElementById('fCost').value='';
+    document.getElementById('fNow').value='';
+    document.getElementById('fQty').value='';
+    document.getElementById('fGold').value='';
+    document.getElementById('fTicker').value='';
+    document.getElementById('fShares').value='';
+    document.getElementById('fNote').value='';
+    document.getElementById('deleteBtn').style.display='none';
+    pickCat('stock'); pickSrc('manual');
+  } else {
+    const a = assets[i];
+    document.getElementById('sheetTitle').textContent='แก้ไขทรัพย์สิน';
+    document.getElementById('editId').value=i;
+    document.getElementById('fName').value=a.name;
+    document.getElementById('fCost').value=a.cost;
+    document.getElementById('fNow').value=a.now||'';
+    document.getElementById('fNote').value=a.note||'';
+    document.getElementById('fCoin').value=a.coin||'bitcoin';
+    document.getElementById('fQty').value=(a.src==='crypto')?(a.qty||''):'';
+    document.getElementById('fGold').value=(a.src==='gold')?(a.qty||''):'';
+    document.getElementById('fTicker').value=(a.src==='stockus')?(a.ticker||''):'';
+    document.getElementById('fShares').value=(a.src==='stockus')?(a.qty||''):'';
+    document.getElementById('deleteBtn').style.display='block';
+    pickCat(a.cat); pickSrc(a.src||'manual');
+  }
+  updatePreview();
+  document.getElementById('overlay').classList.add('show');
+}
+function closeSheet(){ document.getElementById('overlay').classList.remove('show'); }
+
+function previewNow(){
+  if(activeSrc==='crypto'){
+    const coin=document.getElementById('fCoin').value;
+    const qty=+document.getElementById('fQty').value||0;
+    if(prices.coins[coin]) return qty*prices.coins[coin];
+    return null; // ยังไม่มีราคา
+  }
+  if(activeSrc==='gold'){
+    const qty=+document.getElementById('fGold').value||0;
+    if(prices.gold) return qty*prices.gold;
+    return null;
+  }
+  if(activeSrc==='stockus'){
+    const t=document.getElementById('fTicker').value.trim().toUpperCase();
+    const sh=+document.getElementById('fShares').value||0;
+    if(t && prices.stocks[t] && prices.usdthb) return sh*prices.stocks[t]*prices.usdthb;
+    return null;
+  }
+  return +document.getElementById('fNow').value||0;
+}
+function updatePreview(){
+  const cost=+document.getElementById('fCost').value||0;
+  const now=previewNow();
+  const el=document.getElementById('preview');
+  if(now===null){
+    el.innerHTML='ℹ️ ยังไม่มีราคาอ้างอิง — กดปุ่ม <b>🔄 อัปเดต</b> ที่หน้าหลักเพื่อดึงราคาล่าสุด แล้วมูลค่าจะคำนวณให้อัตโนมัติ';
+    el.style.color='var(--muted)'; return;
+  }
+  if(!cost && !now){ el.textContent='กรอกข้อมูลเพื่อดูผลตอบแทน'; el.style.color='var(--muted)'; return; }
+  const pl=now-cost; const p=pct(cost,now); const sign=pl>=0?'+':'';
+  let extra = (activeSrc!=='manual') ? `มูลค่าปัจจุบัน (คำนวณ): <b>${fmt(now)}</b><br>` : '';
+  el.innerHTML=extra+`กำไร/ขาดทุน: <b style="color:${pl>=0?'var(--green)':'var(--red)'}">${sign}${fmt(pl)} (${sign}${p.toFixed(1)}%)</b>`;
+  el.style.color='var(--text)';
+}
+function saveAsset(){
+  const name=document.getElementById('fName').value.trim();
+  if(!name){ alert('กรุณาใส่ชื่อรายการ'); return; }
+  const obj={ cat:activeCat, name, src:activeSrc,
+    cost:+document.getElementById('fCost').value||0,
+    note:document.getElementById('fNote').value.trim() };
+  if(activeSrc==='crypto'){
+    obj.coin=document.getElementById('fCoin').value;
+    obj.qty=+document.getElementById('fQty').value||0;
+    obj.now=previewNow()||0;
+  } else if(activeSrc==='gold'){
+    obj.qty=+document.getElementById('fGold').value||0;
+    obj.now=previewNow()||0;
+  } else if(activeSrc==='stockus'){
+    obj.ticker=document.getElementById('fTicker').value.trim().toUpperCase();
+    obj.qty=+document.getElementById('fShares').value||0;
+    obj.now=previewNow()||0;
+  } else {
+    obj.now=+document.getElementById('fNow').value||0;
+  }
+  const id=document.getElementById('editId').value;
+  if(id===''){ assets.push(obj); } else { assets[+id]=obj; }
+  save(); render(); closeSheet();
+}
+function deleteAsset(){
+  const id=document.getElementById('editId').value;
+  if(id==='') return;
+  if(confirm('ลบรายการนี้?')){ assets.splice(+id,1); save(); render(); closeSheet(); }
+}
+
+// ---- ดึงราคาล่าสุด ----
+async function refreshPrices(){
+  const btn=document.getElementById('refreshBtn');
+  btn.disabled=true; btn.textContent='⏳ กำลังโหลด...';
+  let errs=[];
+  // --- คริปโต ---
+  const coinIds=[...new Set(assets.filter(a=>a.src==='crypto'&&a.coin).map(a=>a.coin))];
+  // 1) KUB เรียลไทม์จาก Bitkub
+  if(coinIds.includes('kub')){
+    try{
+      const r=await fetch('https://api.bitkub.com/api/market/ticker');
+      const j=await r.json();
+      const last=j?.THB_KUB?.last;
+      if(last>0) prices.coins.kub=last; else errs.push('KUB');
+    }catch(e){ errs.push('KUB'); }
+  }
+  // 2) เหรียญอื่นผ่าน CoinGecko
+  const cgIds=coinIds.filter(x=>x!=='kub');
+  if(cgIds.length){
+    try{
+      const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids='+cgIds.join(',')+'&vs_currencies=thb');
+      const j=await r.json();
+      cgIds.forEach(id=>{ if(j[id]&&j[id].thb) prices.coins[id]=j[id].thb; });
+    }catch(e){ errs.push('คริปโต'); }
+  }
+
+  // --- หุ้น US (เรียลไทม์ผ่าน Yahoo, แปลงเป็นบาท) ---
+  const tickers=[...new Set(assets.filter(a=>a.src==='stockus'&&a.ticker).map(a=>a.ticker))];
+  if(tickers.length){
+    // เรตเงินบาท
+    try{
+      const fx=await fetch('https://open.er-api.com/v6/latest/USD').then(x=>x.json());
+      if(fx?.rates?.THB) prices.usdthb=fx.rates.THB;
+    }catch(e){}
+    // ราคาหุ้นแต่ละตัว
+    for(const t of tickers){
+      try{
+        const y='https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(t)+'?interval=1d&range=1d';
+        const r=await fetch('https://corsproxy.io/?url='+encodeURIComponent(y));
+        const j=await r.json();
+        const px=j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+        if(px>0) prices.stocks[t]=px; else errs.push(t);
+      }catch(e){ errs.push(t); }
+    }
+    if(!prices.usdthb) errs.push('เรตเงินบาท');
+  }
+
+  // --- ทองคำไทย (บาททอง) ---
+  const hasGold=assets.some(a=>a.src==='gold');
+  if(hasGold){
+    let ok=false;
+    // 1) ลองราคาสมาคมค้าทองฯ (แม่นยำที่สุด)
+    try{
+      const r=await fetch('https://api.chnwt.dev/thai-gold-api/latest');
+      const j=await r.json();
+      const sell=j?.response?.price?.gold_bar?.sell;
+      const v=parseFloat(String(sell||'').replace(/,/g,''));
+      if(v>0){ prices.gold=v; prices.goldEst=false; ok=true; }
+    }catch(e){}
+    // 2) สำรอง: คำนวณราคาประมาณจากทองสากล + เรตเงินบาท (1 บาททอง = 15.244g, 96.5%)
+    if(!ok){
+      try{
+        const [g,fx]=await Promise.all([
+          fetch('https://api.gold-api.com/price/XAU').then(x=>x.json()),
+          fetch('https://open.er-api.com/v6/latest/USD').then(x=>x.json())
+        ]);
+        const usdOz=g?.price, thbRate=fx?.rates?.THB;
+        if(usdOz&&thbRate){
+          prices.gold=Math.round(usdOz/31.1035*thbRate*15.244*0.965);
+          prices.goldEst=true; ok=true;
+        }
+      }catch(e){}
+    }
+    if(!ok) errs.push('ทองคำไทย');
+  }
+  prices.ts=new Date().toISOString();
+  savePrices();
+  // อัปเดต now ของรายการที่เชื่อมราคา
+  assets.forEach(a=>{ if(a.src==='crypto'||a.src==='gold'||a.src==='stockus') a.now=valueOf(a); });
+  save(); render();
+  btn.disabled=false; btn.textContent='🔄 อัปเดต';
+  if(errs.length) alert('ดึงราคาไม่สำเร็จ: '+errs.join(', ')+'\n(อาจเป็นเพราะเน็ต หรือบริการชั่วคราว — ลองใหม่ภายหลัง)');
+  else if(!coinIds.length && !hasGold && !tickers.length) alert('ยังไม่มีรายการที่เชื่อมราคา\nเพิ่มรายการแล้วเลือกแหล่งราคาเป็น 🪙 คริปโต / 🥇 ทองไทย / 📈 หุ้น US');
+}
+
+// ---- Backup / Restore ----
+function exportData(){
+  const blob=new Blob([JSON.stringify(assets,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='ทรัพย์สิน-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+}
+function importData(e){
+  const file=e.target.files[0]; if(!file) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      if(Array.isArray(data)){
+        if(confirm('นำเข้าข้อมูล '+data.length+' รายการ? (จะแทนที่ข้อมูลเดิม)')){
+          assets=data; save(); render();
+        }
+      } else alert('ไฟล์ไม่ถูกต้อง');
+    }catch(err){ alert('อ่านไฟล์ไม่ได้'); }
+    e.target.value='';
+  };
+  r.readAsText(file);
+}
+
+document.getElementById('overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') closeSheet(); });
+renderDots();
+render();
+</script>
+</body>
+</html>
